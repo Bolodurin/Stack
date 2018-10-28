@@ -1,4 +1,15 @@
-#include <iostream>
+
+/*
+    Уверен, тема с войдовыми функциями и ассертами внутри - это
+    идея Деда. Если да, то он наверняка должен был сказать, что
+    это не оч и надо сделать по-другому. Вообще войдовые функции
+    лучше стараться не юзать, они должны ведь сигнализировать об 
+    ошибках, и выходить, посылая проге SIGABORT (assert, кажется,
+    так и делает) - не оч тема
+ */
+
+
+#include<iostream>
 #include<stdio.h>
 #include<stdlib.h>
 #include<assert.h>
@@ -34,6 +45,9 @@ typedef struct Stack
 
 bool StackOk(const Stack* stk)
 {
+/*
+    stk может быть нулевым, тогда упадет :(
+ */
     elem_type sum = 0;
     for(unsigned int i = 0; i < stk->size_stack; i++)
     {
@@ -54,6 +68,9 @@ bool StackOk(const Stack* stk)
 void StackDump(const Stack* stk, const char* err_info)
 {
     FILE* log = fopen(LOG_FILE, "a");
+/*
+    Проверочку бы сюда...
+ */
 
     fprintf(log, "Stack \"stk\": 0x%p\n", stk);
     fprintf(log, "%s\n", err_info);
@@ -74,6 +91,10 @@ void StackDump(const Stack* stk, const char* err_info)
     @param stack_test - stack for initialization
 */
 
+/*
+    Функция может завершиться неуспешно, не возвращать ли ошибку?
+ */
+
 void stack_init(Stack* stack_test)
 {
     stack_test->start_canary = CANARY_CONST;
@@ -81,6 +102,9 @@ void stack_init(Stack* stack_test)
     stack_test->memory_size = START_MEM_SIZE;
     stack_test->array_stack = (
                 elem_type*)calloc(stack_test->memory_size, sizeof(elem_type));
+/*
+    Проверку calloc'а
+ */
     stack_test->control_sum = 0;
     stack_test->end_canary = CANARY_CONST;
     //assert(stack_test->array_stack);
@@ -99,6 +123,9 @@ void stack_init(Stack* stack_test)
     @param pushing_elem - element, which need pushing
 */
 
+/*
+    Функция тоже может обломаться, вернуть тогда ошибку лучше
+ */
 void push(Stack* our_stack, elem_type pushing_elem)
 {
     if(!StackOk(our_stack))
@@ -106,16 +133,24 @@ void push(Stack* our_stack, elem_type pushing_elem)
         StackDump(our_stack, "ERROR in start of push");
         assert(!"push");
     }
+
     if(our_stack->size_stack > our_stack->memory_size)
     {
+/*
+    Одну строку не надо брать в скобки фигурные
+ */
         std::cout << "ERROR with size of stack and memory";
     }
+
     if(our_stack->size_stack == our_stack->memory_size)
     {
         our_stack->memory_size *= 2;
         our_stack->array_stack = (elem_type*)realloc(
                             our_stack->array_stack,
                             our_stack->memory_size * sizeof(elem_type));
+/*
+    Не надо делать проверки ассертами. Ифами лучше.
+ */
         assert(our_stack->array_stack);
     }
     our_stack->size_stack++;
@@ -150,6 +185,9 @@ elem_type pop(Stack* our_stack)
         array_stack[our_stack->size_stack-1];
     our_stack->size_stack--;
     return result;
+/*
+    Зачем после ретерна проверки? Они ж никогда не выполнятся
+ */
     if(!StackOk(our_stack))
     {
         StackDump(our_stack, "ERROR in end of pop");
@@ -170,7 +208,12 @@ void delete_stack(Stack* our_stack)
         StackDump(our_stack, "ERROR in start of delete_stack");
         assert(!"delete_stack");
     }
+
     free(our_stack->array_stack);
+
+/*
+    Указатель же. Не круто приравнивать указатель нулю, особенно в С++
+ */
     our_stack->size_stack = 0;
 }
 
